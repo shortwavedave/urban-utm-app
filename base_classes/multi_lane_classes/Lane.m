@@ -57,6 +57,18 @@ classdef Lane < handle
             end
         end
         
+        function lanes_out = getLanesByID(lanes_in, ids)
+            lanes_out = [];
+            for i = 1:length(ids)
+                for j = 1:length(lanes_in)
+                    if (lanes_in(j).m_id == ids(i))
+                        lanes_out = [lanes_out lanes_in(j)];
+                        break;
+                    end
+                end
+            end
+        end
+        
         function digr = getDigraph(obj)
             s = {};
             t = {};
@@ -143,8 +155,20 @@ classdef Lane < handle
             end
         end
         
-        function plotLanesDigraph(obj)
-            hold on;
+        function highlightLanes(lanes, plot_handle, lane_ids)
+            num_s = length(lane_ids);
+            num_t = num_s;
+            s = cell(1,num_s);
+            t = cell(1,num_t);
+            h_lanes = lanes.getLanesByID(lane_ids);
+            for i = 1:length(h_lanes)
+                s(i) = {h_lanes(i).m_x0str};
+                t(i) = {h_lanes(i).m_xfstr};
+            end
+            highlight(plot_handle, s, t);
+        end
+        
+        function ph = plotLanesDigraph(obj,h)
             G = obj.getDigraph;
             x = zeros(2,G.numnodes);
             for i = 1:G.numnodes
@@ -160,8 +184,11 @@ classdef Lane < handle
                     end
                 end
             end
-            plot(G,'XData',x(1,:)','YData',x(2,:)','EdgeLabel',G.Edges.Weight)    
-            hold off;
+            if nargin < 2
+                ph = plot(G,'XData',x(1,:)','YData',x(2,:)','EdgeLabel',G.Edges.Weight);
+            else
+                ph = plot(h,G,'XData',x(1,:)','YData',x(2,:)','EdgeLabel',G.Edges.Weight);
+            end
         end
     end
 end
