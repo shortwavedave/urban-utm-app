@@ -60,9 +60,11 @@ classdef MultiLaneUAS < UAS
         function acceptPercept(obj, percept_handle)
            obj.m_x = percept_handle.getPosition();
            obj.m_num_contingent = percept_handle.getContingencyCount();
-           v0 = obj.m_lane_path(obj.m_lane_i).vn;
-           [obj.m_closest_pos, obj.m_closest_dist] = ...
-               percept_handle.getNearestInFront(obj.m_x, v0);
+           if ~isempty(obj.m_lane_path)
+               v0 = obj.m_lane_path(obj.m_lane_i).vn;
+               [obj.m_closest_pos, obj.m_closest_dist] = ...
+                   percept_handle.getNearestInFront(obj.m_x, v0);
+           end
         end
     end
 end

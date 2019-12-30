@@ -104,6 +104,15 @@ classdef Lane < handle
             end
         end
         
+        function lanes = getOutLanesFromNode(obj, x0_node)
+            lanes = [];
+            for i = 1:length(obj)
+                if strcmp(obj(i).m_x0str, x0_node)
+                    lanes = [lanes obj(i)];
+                end
+            end
+        end
+        
         function lanes_out = getLanesByID(lanes_in, ids)
             lanes_out = [];
             for i = 1:length(ids)
@@ -221,6 +230,21 @@ classdef Lane < handle
         
         function highlightNodes(~, plot_handle, node_ids)
             highlight(plot_handle, node_ids);
+        end
+        
+        function pos = getNodePositions(lanes, x_str)
+            pos = zeros(size(x_str,1),2);
+            for i = 1:size(x_str,1)
+                for j = 1:length(lanes)
+                    if (strcmp(lanes(j).m_x0str, x_str(i)))
+                        pos(i,:) = lanes(j).m_x0';
+                        break;
+                    elseif (strcmp(lanes(j).m_xfstr, x_str(i)))
+                        pos(i,:) = lanes(j).m_xf';
+                        break;
+                    end
+                end
+            end
         end
         
         function ph = plotLanesDigraph(obj,h,callback)

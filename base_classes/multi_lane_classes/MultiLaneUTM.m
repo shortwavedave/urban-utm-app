@@ -15,9 +15,13 @@ classdef MultiLaneUTM < UTM
     end
     
     methods
-        function obj = MultiLaneUTM()
+        function obj = MultiLaneUTM(action_type, percept_type)
             %MULTILANEUTM Construct an instance of this class
-            obj = obj@UTM(@MultiLaneAction, @MultiLanePercept);
+            if nargin == 0
+                action_type = @MultiLaneAction;
+                percept_type = @MultiLanePercept;
+            end
+            obj = obj@UTM(action_type, percept_type); 
         end
         
         function registerUAS(obj, UAS)

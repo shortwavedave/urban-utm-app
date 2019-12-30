@@ -3,7 +3,11 @@ function chooseAction(obj, action_handle)
     % you have not reached near your end position.
     last_lane_i = length(obj.m_lane_path);
     started = (obj.m_time_step*obj.m_sample_per > obj.m_start_time);
-    not_done = (norm(obj.m_x - obj.m_lane_path(last_lane_i).xf) > .5);
+    if ~isempty(obj.m_lane_path)
+        not_done = (norm(obj.m_x - obj.m_lane_path(last_lane_i).m_xf) > .5);
+    else
+        not_done = true;
+    end
     active = started && not_done;
     % Make the speed zero if it's not time to start yet
     if (active)
@@ -34,23 +38,30 @@ function chooseAction(obj, action_handle)
         speed = 0;
     end
     
-    % Get the next position along the lane path based on the
-    % desired speed.
-    [x, obj.m_lane_i] = ...
-        obj.m_lane_path.getNextPosition(obj.m_next_x, speed, ...
-        obj.m_sample_per, obj.m_lane_i);
+    if active
+        if ~isempty(obj.m_lane_path)
+        % Get the next position along the lane path based on the
+        % desired speed.
+        [x, obj.m_lane_i] = ...
+            obj.m_lane_path.getNextPosition(obj.m_next_x, speed, ...
+            obj.m_sample_per, obj.m_lane_i);
+        else
+            x = obj.m_x;
+        end
+        obj.m_next_x = x;
 
-    obj.m_next_x = x;
+        % Calculate the control
+        obj.m_ek = x - obj.m_x;
+        obj.m_yk = ...
+            obj.PIDControl(obj.m_ykm1, obj.m_ek, obj.m_ekm1, obj.m_ekm2);
 
-    % Calculate the control
-    obj.m_ek = x - obj.m_x;
-    obj.m_yk = ...
-        obj.PIDControl(obj.m_ykm1, obj.m_ek, obj.m_ekm1, obj.m_ekm2);
+        obj.m_ekm2 = obj.m_ekm1;
+        obj.m_ekm1 = obj.m_ek;
+        obj.m_ykm1 = obj.m_yk;
 
-    obj.m_ekm2 = obj.m_ekm1;
-    obj.m_ekm1 = obj.m_ek;
-    obj.m_ykm1 = obj.m_yk;
-
-    action_handle.setAccel(obj.m_yk);
+        action_handle.setAccel(obj.m_yk);
+    else
+        action_handle.setAccel([0 0]');
+    end
 end
 
