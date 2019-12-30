@@ -24,10 +24,10 @@ classdef MultiLaneUTM < UTM
             obj = obj@UTM(action_type, percept_type); 
         end
         
-        function registerUAS(obj, UAS)
+        function registerUAS(utm, UAS)
             %registerUAS - Register a UAS with the UTM system
-            obj.registerUAS@UTM(UAS);
-            UAS.m_sample_per = obj.m_sample_per;
+            utm.registerUAS@UTM(UAS);
+            UAS.m_sample_per = utm.m_sample_per;
         end
         
         function initUASPosition(obj, UAS_ID, position)

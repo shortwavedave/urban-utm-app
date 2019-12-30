@@ -13,6 +13,9 @@ classdef MultiLaneSimRunner < handle
         m_uas_config;
         m_plot_xlim = [-5,25]
         m_plot_ylim = [-5,15]
+        m_h_axis
+        m_h_pos_plot
+        m_plot_step_listener
     end
     
     events
@@ -118,6 +121,43 @@ classdef MultiLaneSimRunner < handle
                     sim_runner.m_sample_per;
                 sim_runner.m_utm.stepTime(0,1);
                 notify(sim_runner, 'StepTaken');
+            end
+        end
+        
+        function enablePlotSteps(sim_runner, h_axis)
+            sim_runner.m_h_axis = h_axis;
+            sim_runner.m_plot_step_listener = ...
+                addlistener(sim_runner, 'StepTaken', ...
+                @sim_runner.handlePlotStep);
+        end
+        
+        function disablePlotSteps(sim_runner)
+            delete(sim_runner.m_plot_step_listener);
+        end
+        
+        function handlePlotStep(sim_runner, src, evt)
+            if isempty(sim_runner.m_h_pos_plot)
+                sim_runner.m_h_pos_plot = ...
+                    sim_runner.plotPositions(sim_runner.m_h_axis);
+            else
+                h = sim_runner.m_h_pos_plot;
+                sim_runner.m_h_pos_plot = ...
+                    sim_runner.plotPositions(sim_runner.m_h_axis, h);
+            end
+        end
+        
+        function h_out = plotPositions(sim_runner, h_axis, h_in)
+            x_ind = 1;
+            y_ind = 2;
+            x_pos = sim_runner.m_utm.m_state.positions_k(x_ind,:);
+            y_pos = sim_runner.m_utm.m_state.positions_k(y_ind,:);
+            if nargin < 3
+                hold(h_axis, 'on');
+                h_out = scatter(h_axis, x_pos, y_pos);
+                hold(h_axis, 'off');
+            else
+                h_out = h_in;
+                set(h_in,'XData',x_pos,'YData',y_pos);
             end
         end
        
