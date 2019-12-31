@@ -14,10 +14,20 @@ classdef NormalUAS < MultiLaneUAS
         end
         
         
-        function chooseAction(agent, action_handle)
+        function chooseAction(uas, action_handle)
             % Add code here to choose an action
+            will_be_active = uas.getWillBeActive();
             
-            agent.chooseAction@MultiLaneUAS(action_handle);
+            if will_be_active
+                land_nodes = uas.getLandNodes();
+                launch = uas.m_lane_path.getStartNode();
+                land = land_nodes(randi(length(land_nodes)));
+                lane_path = uas.getShortestPath(launch, land{:});
+                
+                uas.m_lane_path = lane_path;
+            end
+            
+            uas.chooseAction@MultiLaneUAS(action_handle);
         end
         
         function acceptPercept(agent, percept_handle)

@@ -16,15 +16,20 @@ classdef MultiLaneUAS < UAS
         m_forced_contingency = false; % Whether a contingency was forced
         m_num_contingent = 0; % The number of contingent UAS in the system
         m_done = false; % Whether the UAS has completed its mission
+        m_utm % The UTM this UAS is registered with
         
         % Trajectory properties
         m_next_x = [0 0]';
         m_start_time = 0;
         
         % PID properties 
-        m_Kp = 1; % Proportional Gain
-        m_Ki = .001; % Integral Gain
-        m_Kd = 40; % Derivative Gain
+        % -0.0115   53.6162    0.0002
+%         m_Kp = 1; % Proportional Gain
+%         m_Ki = .001; % Integral Gain
+%         m_Kd = 40; % Derivative Gain
+        m_Kp = -0.0115; % Proportional Gain
+        m_Ki = 0.0002; % Integral Gain
+        m_Kd = 53.6162; % Derivative Gain
         m_ek = [0 0]'; % Error between current and desired position at next step
         m_ekm1 = [0 0]'; % m_ek at (k-1) step
         m_ekm2 = [0 0]'; % m_ek at (k-2) step
@@ -37,6 +42,49 @@ classdef MultiLaneUAS < UAS
             %MULTILANEUAS Construct an instance of this class
             %   Detailed explanation goes here
             obj = obj@UAS(ID);
+        end
+        
+        function utm = getUtm(utm)
+            utm = utm.m_utm;
+        end
+        
+        function lane_path = getShortestPath(uas, x0, xf)
+           utm = uas.m_utm;
+           lane_system = utm.m_lane_system;
+           lane_path = lane_system.getShortestPath(x0, xf);
+        end
+        
+        function launch_nodes = getLaunchNodes(uas)
+            utm = uas.getUtm();
+            node_table = utm.getNodeTable();
+            node_types = node_table{:, {'Type'}}; 
+            nodes = node_table{:, {'ID'}}; 
+            launch_nodes = nodes(node_types == 'launch');
+        end
+        
+        function land_nodes = getLandNodes(uas)
+            utm = uas.getUtm();
+            node_table = utm.getNodeTable();
+            node_types = node_table{:, {'Type'}}; 
+            nodes = node_table{:, {'ID'}}; 
+            land_nodes = nodes(node_types == 'land');
+        end
+        
+        function will_be_active = getWillBeActive(uas)
+            [active, ~] = uas.getIsActive();
+            will_be_active = active && (~uas.m_active);
+        end
+        
+        function [active, done] = getIsActive(uas)
+            last_lane_i = length(uas.m_lane_path);
+            started = (uas.m_time_step*uas.m_sample_per > uas.m_start_time);
+            if ~isempty(uas.m_lane_path)
+                not_done = (norm(uas.m_x - uas.m_lane_path(last_lane_i).m_xf) > .5);
+            else
+                not_done = true;
+            end
+            active = started && not_done;
+            done = ~not_done;
         end
         
         function setStartTime(obj, time)

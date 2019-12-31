@@ -82,6 +82,10 @@ classdef Lane < handle
            m_x0 = obj(1).m_x0; 
         end
         
+        function m_x0str = getStartNode(obj)
+           m_x0str = obj(1).m_x0str; 
+        end
+        
         function inLane = isInLane(obj, x)
             inLane = norm(x-obj.m_x0) < norm(obj.m_xf-obj.m_x0);
         end

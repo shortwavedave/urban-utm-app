@@ -62,12 +62,16 @@ classdef MultiLanePercept < handle
             %     position (2x1): Position of nearest UAS in front. [x,y]'
             %     distance (double): distance to nearest UAS in front
             % Call:
-            %     [position, distance] = uasPercept.getNearestInFront(x, v);
+            %     [position, distance] =    uasPercept.getNearestInFront(x, v);
             
             % Replicate the velocity vector in order to perform a dot
             % product.
             arc = 5*pi/180;
             active_positions = obj.m_positions(:, obj.m_active);
+            if ~all(size(obj.m_active) == size(obj.m_distances))
+                num_missing = max(size(obj.m_active) - size(obj.m_distances));
+                obj.m_distances = [obj.m_distances inf(1,num_missing)];
+            end
             active_distances = obj.m_distances(:, obj.m_active);
             
             v0norm = norm(v0);

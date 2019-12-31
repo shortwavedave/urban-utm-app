@@ -39,13 +39,16 @@ classdef MultiLaneSimRunner < handle
                 , percept_selected... % The selected percept class
                 , action_selected...  % The selected action class
                 , lane_sys...         % The lane system
+                , node_table...       % The node configuration
             )
             sim_runner.m_time_step = 0;
             action_handle = str2func(action_selected);
             percept_handle = str2func(percept_selected);
             sim_runner.m_utm = feval(utm_selected, action_handle, ...
                 percept_handle);
+            sim_runner.m_utm.m_node_tbl = node_table;
             sim_runner.m_lanes = lane_sys;
+            sim_runner.m_utm.m_lane_system = lane_sys;
             sim_runner.m_uas_config = tbl_UAS_Data;
         end
         
