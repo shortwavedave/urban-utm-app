@@ -49,7 +49,7 @@ classdef MultiLanePercept < handle
             count = obj.m_contingent;
         end
         
-        function [position, distance] = getNearestInFront(obj, x0, v0)
+        function [position, distance] = getNearestInFront(obj, x0, v0, my_id)
             %getNearestInFront - get the position of the nearest UAS in front
             % of your UAS. Does not return positions that are on top of
             % each other, i.e., assumes there is distance between them.
@@ -67,31 +67,41 @@ classdef MultiLanePercept < handle
             % Replicate the velocity vector in order to perform a dot
             % product.
             arc = 5*pi/180;
-            active_positions = obj.m_positions(:, obj.m_active);
-            if ~all(size(obj.m_active) == size(obj.m_distances))
-                num_missing = max(size(obj.m_active) - size(obj.m_distances));
-                obj.m_distances = [obj.m_distances inf(1,num_missing)];
+            active = obj.m_active(obj.m_active);
+            % Remove self from active list
+            if ~isempty(active)
+                active(my_id) = false;
             end
-            active_distances = obj.m_distances(:, obj.m_active);
+            active_positions = obj.m_positions(:, active);
+%             if ~all(size(obj.m_active) == size(obj.m_distances))
+%                 num_missing = max(size(obj.m_active) - size(obj.m_distances));
+%                 obj.m_distances = [obj.m_distances inf(1,num_missing)];
+%             end
+%             active_distances = obj.m_distances(obj.m_active);
             
-            v0norm = norm(v0);
-            v0t = repmat(v0, 1, size(active_positions,2));
-            
-            % Get the vector pointing to the other UAS.
-            d = active_positions - x0;
-            
-            d_norms = sqrt(d(1,:).^2 + d(2,:).^2);
-            
-            % dot product, column-wise
-            angles = acos( dot(v0t,d,1) ./ (d_norms*v0norm) );
-            inFront = (angles < arc); 
-            
-            inds = find(inFront);
-            
-            [~, i] = min(active_distances(inds));
-            uas_i = inds(i);
-            position = active_positions(:,uas_i);
-            distance = active_distances(uas_i);
+            if (~isempty(active_positions))
+                v0norm = norm(v0);
+                v0t = repmat(v0, 1, size(active_positions,2));
+
+                % Get the vector pointing to the other UAS.
+                d = active_positions - x0;
+
+                d_norms = sqrt(d(1,:).^2 + d(2,:).^2);
+
+                % dot product, column-wise
+                angles = acos( dot(v0t,d,1) ./ (d_norms*v0norm) );
+                inFront = (angles < arc); 
+
+                inds = find(inFront);
+
+                [~, i] = min(d_norms(inds));
+                uas_i = inds(i);
+                position = active_positions(:,uas_i);
+                distance = d_norms(uas_i);
+            else
+                position = inf(size(x0));
+                distance = inf;
+            end
         end
     end
 end

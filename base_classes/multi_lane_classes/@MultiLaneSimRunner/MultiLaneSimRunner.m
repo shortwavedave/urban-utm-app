@@ -65,7 +65,6 @@ classdef MultiLaneSimRunner < handle
                 sec_per_uas = sim_runner.m_uas_config{i,{'Period'}};
                 start_dist = sim_runner.m_uas_config{i,{'Start Dist.'}};
                 launch_nodes = sim_runner.m_uas_config{i,{'Start Nodes'}};
-%                 launch_nodes = start_nodes(start_nodes == 'launch');
                 launch_positions = ...
                     sim_runner.m_lanes.getNodePositions(launch_nodes);
                 
@@ -107,16 +106,27 @@ classdef MultiLaneSimRunner < handle
                     uas = feval(uas_type{:}, length(sim_runner.m_uas) + 1);
                     sim_runner.m_uas = [ sim_runner.m_uas, uas ];
                     uas.setStartTime(event_step*sim_runner.m_sample_per);
-                    uas.m_x = launch_position;
+                    uas.setPosition(launch_position);
                     uas.setLanePath(launch_lane);
                     sim_runner.m_utm.registerUAS(uas);
                     sim_runner.m_utm.initUASPosition(uas.ID, launch_position);
-                    sim_runner.m_utm.initUASSpeed(uas.ID, 0);
+                    sim_runner.m_utm.initUASSpeed(uas.ID, [0 0]');
                 end
             end
         end
         
+        function num_uas = getExpectedUas(sim_runner, steps)
+            periods = sim_runner.m_uas_config{:,{'Period'}};
+            rates = 1 ./ periods;
+            total_rate = sum(rates);
+            num_uas = ceil(total_rate * sim_runner.m_sample_per * steps);
+        end
+        
         function runSim(sim_runner, steps)
+            expectedUas = sim_runner.getExpectedUas(steps);
+            if (expectedUas > 0)
+                sim_runner.m_utm.preAllocateState(expectedUas);
+            end
             sim_runner.generateUAS(steps);
             for i = 1:steps
                 sim_runner.m_time_step = sim_runner.m_time_step + 1;
@@ -150,10 +160,11 @@ classdef MultiLaneSimRunner < handle
         end
         
         function h_out = plotPositions(sim_runner, h_axis, h_in)
+            active = sim_runner.m_utm.m_state.active;
             x_ind = 1;
             y_ind = 2;
-            x_pos = sim_runner.m_utm.m_state.positions_k(x_ind,:);
-            y_pos = sim_runner.m_utm.m_state.positions_k(y_ind,:);
+            x_pos = sim_runner.m_utm.m_state.positions_k(x_ind,active);
+            y_pos = sim_runner.m_utm.m_state.positions_k(y_ind,active);
             if nargin < 3
                 hold(h_axis, 'on');
                 h_out = scatter(h_axis, x_pos, y_pos);

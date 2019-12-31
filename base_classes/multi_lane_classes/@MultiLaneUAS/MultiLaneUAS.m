@@ -70,6 +70,10 @@ classdef MultiLaneUAS < UAS
             land_nodes = nodes(node_types == 'land');
         end
         
+        function setPosition(uas, position)
+            uas.m_x = position;
+        end
+        
         function will_be_active = getWillBeActive(uas)
             [active, ~] = uas.getIsActive();
             will_be_active = active && (~uas.m_active);
@@ -105,14 +109,17 @@ classdef MultiLaneUAS < UAS
         
         chooseAction(obj, action_handle)
         
-        function acceptPercept(obj, percept_handle)
-           obj.m_x = percept_handle.getPosition();
-           obj.m_num_contingent = percept_handle.getContingencyCount();
-           if ~isempty(obj.m_lane_path)
-               v0 = obj.m_lane_path(obj.m_lane_i).vn;
-               [obj.m_closest_pos, obj.m_closest_dist] = ...
-                   percept_handle.getNearestInFront(obj.m_x, v0);
-           end
+        function acceptPercept(uas, percept_handle)
+            [active, ~] = uas.getIsActive();
+            if active
+                uas.m_x = percept_handle.getPosition();
+                uas.m_num_contingent = percept_handle.getContingencyCount();
+                if ~isempty(uas.m_lane_path)
+                   v0 = uas.m_lane_path(uas.m_lane_i).vn;
+                   [uas.m_closest_pos, uas.m_closest_dist] = ...
+                       percept_handle.getNearestInFront(uas.m_x, v0, uas.ID);
+                end
+            end
         end
     end
 end
