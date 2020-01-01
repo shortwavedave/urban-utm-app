@@ -10,13 +10,15 @@ classdef MultiLaneSimRunner < handle
         m_sample_per = 0.1;
         m_time = 0;
         trace = [];
-        m_uas_config;
+        m_uas_stream_config;
+        m_uas_finite_config
         m_plot_xlim = [-5,25]
         m_plot_ylim = [-5,15]
         m_h_axis
         m_h_pos_plot
         m_plot_step_listener
         m_uas_colors;
+        m_seed = 0;
     end
     
     events
@@ -24,10 +26,19 @@ classdef MultiLaneSimRunner < handle
     end
     
     methods
-        function obj = MultiLaneSimRunner()
+        function sim_runner = MultiLaneSimRunner()
             %MULTILANESIMRUNNER Construct an instance of this class
             %   Detailed explanation goes here
-            
+            sim_runner.m_seed = rng('default').Seed;
+        end
+        
+        function seed = getSeed(sim_runner)
+            seed = sim_runner.m_seed;
+        end
+        
+        function setSeed(sim_runner, seed)
+            sim_runner.m_seed = seed;
+            rng(seed);
         end
         
         initialize_example(obj)
@@ -36,7 +47,8 @@ classdef MultiLaneSimRunner < handle
         
         function initialize_from_gui(sim_runner...
                 , utm_selected...     % The selected UTM class name
-                , tbl_UAS_Data...     % The table containing the desired mix of UAS types
+                , tbl_UAS_stream_data... % The table containing the desired mix of UAS types
+                , tbl_UAS_finite_data... % The table containing the desired mix of UAS types
                 , percept_selected... % The selected percept class
                 , action_selected...  % The selected action class
                 , lane_sys...         % The lane system
@@ -50,25 +62,66 @@ classdef MultiLaneSimRunner < handle
             sim_runner.m_utm.m_node_tbl = node_table;
             sim_runner.m_lanes = lane_sys;
             sim_runner.m_utm.m_lane_system = lane_sys;
-            sim_runner.m_uas_config = tbl_UAS_Data;
+            sim_runner.m_uas_stream_config = tbl_UAS_stream_data;
+            sim_runner.m_uas_finite_config = tbl_UAS_finite_data;
+        end
+        
+        function generateFiniteUAS(sim_runner)
+            num_uas_types = size(sim_runner.m_uas_finite_config, 1);
+            
+            for i = 1:num_uas_types
+                start_step = sim_runner.m_uas_finite_config{i,{'Start Step'}};
+                if (start_step == sim_runner.m_time_step)
+                    start_lane_id_v = sim_runner.m_uas_finite_config{i,{'Start Lane'}};
+                    uas_type = sim_runner.m_uas_finite_config{i,{'UAS_Type'}};
+                    uas_color_s = sim_runner.m_uas_finite_config{i,{'Color'}};
+                    uas_color_rgb = str2num(uas_color_s{:});
+                    
+                    if (~isempty(start_lane_id_v))
+                        start_lane_id = start_lane_id_v{1};
+                        start_lanes = getLanesByID(sim_runner.m_lanes, start_lane_id);
+                    else
+                        start_lanes = [];
+                    end
+
+                    if (~isempty(start_lanes))
+                        launch_lane = start_lanes(1);
+                    else
+                        launch_lane = [];
+                    end
+
+                    if ~isempty(launch_lane)
+                        launch_position = launch_lane.m_x0;
+                        id = length(sim_runner.m_uas) + 1;
+                        uas = feval(uas_type{:}, id);
+                        sim_runner.m_uas_colors(id, :) = uas_color_rgb;
+                        sim_runner.m_uas = [ sim_runner.m_uas, uas ];
+                        uas.setStartTime(start_step*sim_runner.m_sample_per);
+                        uas.setPosition(launch_position);
+                        uas.setLanePath(launch_lane);
+                        sim_runner.m_utm.registerUAS(uas);
+                        sim_runner.m_utm.initUASPosition(uas.ID, launch_position);
+                        sim_runner.m_utm.initUASSpeed(uas.ID, [0 0]');
+                    end
+                end
+            end
         end
         
         function generateUAS(sim_runner, steps)
             %UAS_Type,Color,Time Dist.,Period,Start Dist.,Start Nodes
             % Time dist is constant or poisson, with rate
             % start dist is round robin or uniform for start nodes
-            num_uas_types = size(sim_runner.m_uas_config, 1);
-            %total_time = steps*sim_runner.m_sample_per;
+            num_uas_types = size(sim_runner.m_uas_stream_config, 1);
             
             for i = 1:num_uas_types
-                uas_type = sim_runner.m_uas_config{i,{'UAS_Type'}};
-                uas_color_s = sim_runner.m_uas_config{i,{'Color'}};
+                uas_type = sim_runner.m_uas_stream_config{i,{'UAS_Type'}};
+                uas_color_s = sim_runner.m_uas_stream_config{i,{'Color'}};
                 uas_color_rgb = str2num(uas_color_s{:});
                 
-                time_dist = sim_runner.m_uas_config{i,{'Time Dist.'}};
-                sec_per_uas = sim_runner.m_uas_config{i,{'Period'}};
-                start_dist = sim_runner.m_uas_config{i,{'Start Dist.'}};
-                launch_nodes = sim_runner.m_uas_config{i,{'Start Nodes'}};
+                time_dist = sim_runner.m_uas_stream_config{i,{'Time Dist.'}};
+                sec_per_uas = sim_runner.m_uas_stream_config{i,{'Period'}};
+                start_dist = sim_runner.m_uas_stream_config{i,{'Start Dist.'}};
+                launch_nodes = sim_runner.m_uas_stream_config{i,{'Start Nodes'}};
                 launch_positions = ...
                     sim_runner.m_lanes.getNodePositions(launch_nodes);
                 
@@ -122,20 +175,27 @@ classdef MultiLaneSimRunner < handle
         end
         
         function num_uas = getExpectedUas(sim_runner, steps)
-            periods = sim_runner.m_uas_config{:,{'Period'}};
+            periods = sim_runner.m_uas_stream_config{:,{'Period'}};
             rates = 1 ./ periods;
             total_rate = sum(rates);
             num_uas = ceil(total_rate * sim_runner.m_sample_per * steps);
         end
         
         function runSim(sim_runner, steps)
-            expectedUas = sim_runner.getExpectedUas(steps);
-            if (expectedUas > 0)
-                sim_runner.m_utm.preAllocateState(expectedUas);
+            if ~isempty(sim_runner.m_uas_stream_config)
+                expectedUas = sim_runner.getExpectedUas(steps);
+                if (expectedUas > 0)
+                    sim_runner.m_utm.preAllocateState(expectedUas);
+                end
+                sim_runner.generateUAS(steps);
             end
-            sim_runner.generateUAS(steps);
+            
+            
             for i = 1:steps
                 sim_runner.m_time_step = sim_runner.m_time_step + 1;
+                if ~isempty(sim_runner.m_uas_finite_config)
+                    sim_runner.generateFiniteUAS();
+                end
                 sim_runner.m_time = sim_runner.m_time_step * ...
                     sim_runner.m_sample_per;
                 sim_runner.m_utm.stepTime(0,1);
