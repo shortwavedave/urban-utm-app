@@ -3,7 +3,7 @@ function chooseAction(uas, action_handle)
     % you have not reached near your end position.
     if (~uas.m_done)
         [active, done] = uas.getIsActive();
-
+        uas.m_done = done;
         % Make the speed zero if it's not time to start yet
         if (active)
             % Make everyone know the UAS is active in the lane system 
@@ -19,7 +19,7 @@ function chooseAction(uas, action_handle)
                 if dist_to_next > (uas.m_closest_dist - uas.m_headway)
                     % The next step is expected to violate headway, so modify
                     % the speed.
-                    uas.m_contingency = true;sim
+                    uas.m_contingency = true;
                     d = (uas.m_closest_dist - uas.m_headway);
                     speed = max(d / uas.m_sample_per, 0);
                 end
@@ -47,9 +47,6 @@ function chooseAction(uas, action_handle)
 
             action_handle.setAccel(uas.m_yk);
         else
-            if (done)
-                uas.m_done = true;
-            end
             action_handle.deactivate();
             uas.m_active = false;
         end

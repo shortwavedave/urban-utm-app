@@ -48,6 +48,14 @@ classdef MultiLaneUAS < UAS
             utm = utm.m_utm;
         end
         
+        function setSpeed(uas, speed)
+            uas.m_speed = speed;
+        end
+        
+        function speed = getSpeed(uas)
+            speed = uas.m_speed;
+        end
+        
         function lane_path = getShortestPath(uas, x0, xf)
            utm = uas.m_utm;
            lane_system = utm.m_lane_system;
@@ -80,15 +88,20 @@ classdef MultiLaneUAS < UAS
         end
         
         function [active, done] = getIsActive(uas)
-            last_lane_i = length(uas.m_lane_path);
-            started = (uas.m_time_step*uas.m_sample_per > uas.m_start_time);
-            if ~isempty(uas.m_lane_path)
-                not_done = (norm(uas.m_x - uas.m_lane_path(last_lane_i).m_xf) > .5);
+            if(~uas.m_done)
+                last_lane_i = length(uas.m_lane_path);
+                started = (uas.m_time_step*uas.m_sample_per > uas.m_start_time);
+                if ~isempty(uas.m_lane_path)
+                    not_done = (norm(uas.m_x - uas.m_lane_path(last_lane_i).m_xf) > .5);
+                else
+                    not_done = true;
+                end
+                active = started && not_done;
+                done = ~not_done;
             else
-                not_done = true;
+                active = false;
+                done = true;
             end
-            active = started && not_done;
-            done = ~not_done;
         end
         
         function setStartTime(obj, time)

@@ -16,6 +16,7 @@ classdef MultiLaneSimRunner < handle
         m_h_axis
         m_h_pos_plot
         m_plot_step_listener
+        m_uas_colors;
     end
     
     events
@@ -57,10 +58,13 @@ classdef MultiLaneSimRunner < handle
             % Time dist is constant or poisson, with rate
             % start dist is round robin or uniform for start nodes
             num_uas_types = size(sim_runner.m_uas_config, 1);
-            total_time = steps*sim_runner.m_sample_per;
+            %total_time = steps*sim_runner.m_sample_per;
             
             for i = 1:num_uas_types
                 uas_type = sim_runner.m_uas_config{i,{'UAS_Type'}};
+                uas_color_s = sim_runner.m_uas_config{i,{'Color'}};
+                uas_color_rgb = str2num(uas_color_s{:});
+                
                 time_dist = sim_runner.m_uas_config{i,{'Time Dist.'}};
                 sec_per_uas = sim_runner.m_uas_config{i,{'Period'}};
                 start_dist = sim_runner.m_uas_config{i,{'Start Dist.'}};
@@ -103,7 +107,9 @@ classdef MultiLaneSimRunner < handle
                     event_step = event_steps(event_step_i);
                     launch_position = start_node_pos(event_step_i, :)';
                     launch_lane = launch_lanes(event_step_i);
-                    uas = feval(uas_type{:}, length(sim_runner.m_uas) + 1);
+                    id = length(sim_runner.m_uas) + 1;
+                    uas = feval(uas_type{:}, id);
+                    sim_runner.m_uas_colors(id, :) = uas_color_rgb;
                     sim_runner.m_uas = [ sim_runner.m_uas, uas ];
                     uas.setStartTime(event_step*sim_runner.m_sample_per);
                     uas.setPosition(launch_position);
@@ -137,6 +143,12 @@ classdef MultiLaneSimRunner < handle
             end
         end
         
+        function deletePlot(sim_runner)
+            if (~isempty(sim_runner.m_h_pos_plot))
+                delete(sim_runner.m_h_pos_plot);
+            end
+        end
+        
         function enablePlotSteps(sim_runner, h_axis)
             sim_runner.m_h_axis = h_axis;
             sim_runner.m_plot_step_listener = ...
@@ -167,11 +179,14 @@ classdef MultiLaneSimRunner < handle
             y_pos = sim_runner.m_utm.m_state.positions_k(y_ind,active);
             if nargin < 3
                 hold(h_axis, 'on');
-                h_out = scatter(h_axis, x_pos, y_pos);
+                h_out = scatter(h_axis, x_pos, y_pos, 'filled');
                 hold(h_axis, 'off');
             else
                 h_out = h_in;
                 set(h_in,'XData',x_pos,'YData',y_pos);
+            end
+            if (any(active))
+                h_out.CData = sim_runner.m_uas_colors(active,:);
             end
         end
        
