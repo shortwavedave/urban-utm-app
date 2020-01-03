@@ -69,12 +69,12 @@ classdef MultiLaneUTM < UTM
             end
         end
         
-        function initUASPosition(obj, UAS_ID, position)
+        function initUASPosition(utm, UAS_ID, position)
             %initUASPosition - Initialize the position of a UAS
-            obj.m_state.positions_k(:,UAS_ID) = position;
-            obj.m_state.positions_km1(:,UAS_ID) = position;
-            obj.m_state.positions_km2(:,UAS_ID) = position;
-            obj.m_state.active(UAS_ID) = false;
+            utm.m_state.positions_k(:,UAS_ID) = position;
+            utm.m_state.positions_km1(:,UAS_ID) = position;
+            utm.m_state.positions_km2(:,UAS_ID) = position;
+            utm.m_state.active(UAS_ID) = false;
         end
         
         function initUASSpeed(obj, UAS_ID, accel)

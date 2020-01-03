@@ -26,11 +26,11 @@ function chooseAction(uas, action_handle)
             end
 
             if ~isempty(uas.m_lane_path)
-            % Get the next position along the lane path based on the
-            % desired speed.
-            [x, uas.m_lane_i] = ...
-                uas.m_lane_path.getNextPosition(uas.m_next_x, speed, ...
-                uas.m_sample_per, uas.m_lane_i);
+                % Get the next position along the lane path based on the
+                % desired speed.
+                [x, uas.m_lane_i] = ...
+                    uas.m_lane_path.getNextPosition(uas.m_next_x, speed, ...
+                    uas.m_sample_per, uas.m_lane_i);
             else
                 x = uas.m_x;
             end

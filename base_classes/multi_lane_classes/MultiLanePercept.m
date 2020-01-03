@@ -25,6 +25,7 @@ classdef MultiLanePercept < handle
         m_active = []
         
         m_contingent = 0;
+        m_updated = false;
     end
     
     methods

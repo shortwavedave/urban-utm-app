@@ -123,8 +123,8 @@ classdef MultiLaneUAS < UAS
         chooseAction(obj, action_handle)
         
         function acceptPercept(uas, percept_handle)
-            [active, ~] = uas.getIsActive();
-            if active
+%             [active, ~] = uas.getIsActive();
+            if uas.m_active
                 uas.m_x = percept_handle.getPosition();
                 uas.m_num_contingent = percept_handle.getContingencyCount();
                 if ~isempty(uas.m_lane_path)
