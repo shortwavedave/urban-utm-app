@@ -19,6 +19,7 @@ classdef MultiLaneSimRunner < handle
         m_plot_step_listener
         m_uas_colors;
         m_seed = 0;
+        m_delay = 0;
     end
     
     events
@@ -174,6 +175,10 @@ classdef MultiLaneSimRunner < handle
             end
         end
         
+        function set_delay(sim_runner, delay_s)
+            sim_runner.m_delay = delay_s;
+        end
+        
         function num_uas = getExpectedUas(sim_runner, steps)
             periods = sim_runner.m_uas_stream_config{:,{'Period'}};
             rates = 1 ./ periods;
@@ -198,7 +203,7 @@ classdef MultiLaneSimRunner < handle
                 end
                 sim_runner.m_time = sim_runner.m_time_step * ...
                     sim_runner.m_sample_per;
-                sim_runner.m_utm.stepTime(0,1);
+                sim_runner.m_utm.stepTime(sim_runner.m_delay,1);
                 notify(sim_runner, 'StepTaken');
             end
         end
