@@ -12,13 +12,13 @@ classdef BuggyUAS < NormalUAS
     end
     
     methods
-        function agent = BuggyUAS(ID)
+        function uas = BuggyUAS(ID)
             %MULTILANEUAS Construct an instance of this class
             %   Use this function to initialize any instance properties
-            agent = agent@NormalUAS(ID);
-            agent.m_rand = rand(1, agent.m_preallocate_rand);
-            agent.m_contingency_per_step = ...
-                agent.m_contingency_per_sec * agent.m_sample_per;
+            uas = uas@NormalUAS(ID);
+            uas.m_rand = rand(1, uas.m_preallocate_rand);
+            uas.m_contingency_per_step = ...
+                uas.m_contingency_per_sec * uas.m_sample_per;
         end
         
         

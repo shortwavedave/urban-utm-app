@@ -7,10 +7,10 @@ classdef NormalUAS < MultiLaneUAS
     end
     
     methods
-        function agent = NormalUAS(ID)
+        function uas = NormalUAS(ID)
             %MULTILANEUAS Construct an instance of this class
             %   Use this function to initialize any instance properties
-            agent = agent@MultiLaneUAS(ID);
+            uas = uas@MultiLaneUAS(ID);
         end
         
         
@@ -30,8 +30,8 @@ classdef NormalUAS < MultiLaneUAS
             uas.chooseAction@MultiLaneUAS(action_handle);
         end
         
-        function acceptPercept(agent, percept_handle)
-            agent.acceptPercept@MultiLaneUAS(percept_handle);
+        function acceptPercept(uas, percept_handle)
+            uas.acceptPercept@MultiLaneUAS(percept_handle);
             
             % Add code here to store percepts
         end
