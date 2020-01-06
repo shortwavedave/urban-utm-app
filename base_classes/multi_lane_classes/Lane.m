@@ -20,22 +20,27 @@ classdef Lane < handle
     end
     
     methods
-        function obj = Lane(m_x0, m_xf)
+        function lane = Lane(x0, xf)
             %LANE Construct an instance of this class
             %   Detailed explanation goes here
-            
+            if (nargin > 0)
+                lane.setEndpoints(x0, xf);
+            end
+        end
+        
+        function setEndpoints(lane, x0, xf)
             % Flip them to the correct orientation
-            if size(m_x0,2) > size(m_x0,1)
-                m_x0 = m_x0';
+            if size(x0,2) > size(x0,1)
+                x0 = x0';
             end
-            
-            if size(m_xf,2) > size(m_xf,1)
-                m_xf = m_xf';
+
+            if size(xf,2) > size(xf,1)
+                xf = xf';
             end
-            
-            obj.m_x0 = m_x0;
-            obj.m_xf = m_xf;
-            obj.vn = (m_xf-m_x0)/norm(m_xf-m_x0);
+
+            lane.m_x0 = x0;
+            lane.m_xf = xf;
+            lane.vn = (xf-x0)/norm(xf-x0);
         end
         
         function s = getSumOfDegrees(lane, node_id)
