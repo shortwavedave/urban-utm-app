@@ -175,7 +175,7 @@ classdef Lane < handle
                     
                     lane.setEndpoints(x0, xf);
 
-                    disp("Notifying nodechanged");
+                    %disp("Notifying nodechanged");
                     notify(lane, 'NodeChanged');
             end
         end
@@ -229,6 +229,18 @@ classdef Lane < handle
                     end
                 end
             end
+        end
+        
+        function updateNodeName(lanes, old_name, new_name)
+            for i = 1:length(lanes)
+                if strcmp(lanes(i).m_x0str, old_name)
+                    lanes(i).m_x0str = new_name;
+                elseif strcmp(lanes(i).m_xfstr, old_name)
+                    lanes(i).m_xfstr = new_name;
+                end
+            end
+                
+            lanes.getDigraph();    
         end
         
         function digr = getDigraph(lanes)
