@@ -122,7 +122,9 @@ classdef MultiLaneSimRunner < handle
                 time_dist = sim_runner.m_uas_stream_config{i,{'Time Dist.'}};
                 sec_per_uas = sim_runner.m_uas_stream_config{i,{'Period'}};
                 start_dist = sim_runner.m_uas_stream_config{i,{'Start Dist.'}};
-                launch_nodes = sim_runner.m_uas_stream_config{i,{'Start Nodes'}};
+                launch_nodes_str = ...
+                    sim_runner.m_uas_stream_config{i,{'Start Nodes'}};
+                launch_nodes = strsplit(launch_nodes_str{:},',')';
                 launch_positions = ...
                     sim_runner.m_lanes.getNodePositions(launch_nodes);
                 

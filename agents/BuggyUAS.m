@@ -1,4 +1,4 @@
-classdef BuggyUAS < NormalUAS
+ classdef BuggyUAS < NormalUAS
     %BuggyUAS Summary of this class goes here
     %   Detailed explanation goes here
     
