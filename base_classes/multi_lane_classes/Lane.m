@@ -27,6 +27,8 @@ classdef Lane < handle
             %   Detailed explanation goes here
             if (nargin > 0)
                 lane.setEndpoints(x0, xf);
+                lane.setNodeIDs(replace(num2str(x0'),' ',''), ...
+                    replace(num2str(xf'),' ',''));
             end
         end
         
