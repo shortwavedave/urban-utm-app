@@ -1,3 +1,4 @@
+
 classdef ROSAgent < handle
     %ROSAGENT Summary of this class goes here
     %   Detailed explanation goes here
@@ -49,6 +50,8 @@ classdef ROSAgent < handle
         m_cam_fig
         m_cam_handle
         m_initialized = false;
+        m_heartbeat_timer
+        m_image_transforms = {}
     end
     
     events
@@ -111,7 +114,9 @@ classdef ROSAgent < handle
                 ['/' num2str(id) '/' 'image_raw'], @agent.handleImage);
             
             agent.m_cmd_pub = ros2publisher(agent.m_node,...
-                ['/' num2str(id) '/' 'cmd'], "std_msgs/String");
+                ['/' num2str(id) '/' 'cmd'], "std_msgs/String", ...
+                "History", "keeplast", "Depth",20, ...
+                "Reliability","reliable");
             
             agent.m_cmd = ros2message("std_msgs/String");
             agent.m_cam_params = load('camParams.mat').camParams;
@@ -144,6 +149,19 @@ classdef ROSAgent < handle
                     break;
                 end
             end
+        end
+        
+        function addImageTransform(agent, transform_fn)
+            agent.m_image_transforms = [agent.m_image_transforms(:), ...
+                {transform_fn}];
+        end
+        
+        function tfs = getImageTransforms(agent)
+            tfs = agent.m_image_transforms;
+        end
+        
+        function deleteImageTransforms(agent, idx)
+            agent.m_image_transforms(idx) = [];
         end
         
         function launch(agent)
@@ -374,6 +392,20 @@ classdef ROSAgent < handle
             delete(agent.m_cam_plot_listener);
         end
         
+        function enableHeartbeat(agent)
+            agent.m_heartbeat_timer = timer('TimerFcn', ...
+                @(x,y)agent.set_rc_ctrl(0,0,0,0), ...
+                'StartDelay', 5, ...
+                'Period', 5, ...
+                'TasksToExecute', inf, ...
+                'ExecutionMode', 'fixedRate');
+            start(agent.m_heartbeat_timer);
+        end
+        
+        function disableHeartbeat(agent)
+            delete(agent.m_heartbeat_timer);
+        end
+        
         function handleCamPlotUpdate(agent, ~, ~)
             im = agent.m_curr_view;
             [im_pts, board_size, world_pts] = ROSAgent.detectCheckerboard(im);
@@ -491,7 +523,11 @@ classdef ROSAgent < handle
     
     methods (Access = 'private')
         function vidCallback(agent, ~, ~)
-            agent.m_vid_player(agent.m_curr_view);
+            im = agent.m_curr_view;
+            for i = 1:length(agent.m_image_transforms)
+                im = agent.m_image_transforms{i}(im);
+            end
+            step(agent.m_vid_player, im);
         end
         
         function framesCallback(agent, ~, ~)
